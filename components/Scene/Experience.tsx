@@ -1,0 +1,544 @@
+import React, { useRef, useMemo, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Float, Stars, Sparkles, useCursor, Text, PresentationControls } from '@react-three/drei';
+import { useAppStore } from '../../store';
+import { AppRoute } from '../../types';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import * as THREE from 'three';
+
+// Fix for missing JSX types in R3F
+// Using an index signature allows all R3F elements (mesh, group, etc.) to be valid JSX
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      [elementName: string]: any;
+    }
+  }
+}
+
+// --- Space Object Components ---
+
+// Simple Earth (Replaces Textured Earth to avoid loading errors)
+const SimpleEarth = ({ isMobile, setHovered, hovered }: { isMobile: boolean, setHovered: (v: boolean) => void, hovered: boolean }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += (hovered ? 0.2 : 0.05) * delta;
+      
+      const pulse = Math.sin(state.clock.elapsedTime * 1.5) * 0.005;
+      const baseScale = 1 + pulse;
+      const targetScale = hovered ? 1.05 : baseScale;
+      
+      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 4);
+    }
+  });
+
+  return (
+    <mesh 
+      ref={meshRef} 
+      rotation={[0.2, 0, 0.1]}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      <sphereGeometry args={[3.2, isMobile ? 32 : 64, isMobile ? 32 : 64]} /> 
+      <meshStandardMaterial 
+        color="#1c4e9d" 
+        roughness={0.7} 
+        metalness={0.1}
+      />
+    </mesh>
+  );
+};
+
+// Main PlanetEarth Component (Composes Atmosphere + Content)
+const PlanetEarth = ({ isMobile }: { isMobile: boolean }) => {
+  const atmosphereRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  useCursor(hovered);
+
+  useFrame((state, delta) => {
+    // Atmosphere pulsing effect (independent of content)
+    if (atmosphereRef.current) {
+        const pulse = Math.sin(state.clock.elapsedTime * 0.8);
+        const scale = 1.2 + pulse * 0.03;
+        atmosphereRef.current.scale.set(scale, scale, scale);
+        
+        const material = atmosphereRef.current.material as THREE.MeshBasicMaterial;
+        material.opacity = 0.2 + pulse * 0.08;
+    }
+  });
+
+  return (
+    <group position={[0, -3.5, 0]}>
+      {/* 
+        Using SimpleEarth directly to ensure stability and avoid external asset dependency errors.
+      */}
+      <SimpleEarth isMobile={isMobile} setHovered={setHovered} hovered={hovered} />
+
+      {/* Atmosphere (Always visible) */}
+      <mesh ref={atmosphereRef} scale={[1.2, 1.2, 1.2]} position={[0, -0.2, 0]}>
+        <sphereGeometry args={[3.2, 32, 32]} />
+        <meshBasicMaterial 
+          color="#4ca1ff" 
+          transparent 
+          opacity={0.15} 
+          side={THREE.BackSide} 
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+const AsteroidField = () => {
+   const groupRef = useRef<THREE.Group>(null);
+   const asteroids = useMemo(() => {
+     return new Array(40).fill(0).map(() => {
+       const x = (Math.random() - 0.5) * 16;
+       const y = (Math.random() - 0.5) * 10;
+       const z = (Math.random() - 0.5) * 8;
+       return {
+         position: [x, y, z],
+         scale: 0.1 + Math.random() * 0.4,
+         rotation: [Math.random() * Math.PI, Math.random() * Math.PI, 0]
+       };
+     });
+   }, []);
+   
+   useFrame((state, delta) => {
+       if (groupRef.current) {
+           // Slow drift of the entire field
+           groupRef.current.rotation.y += 0.05 * delta;
+           groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.05;
+       }
+   });
+
+   return (
+     <group ref={groupRef} position={[0, 0, 0]}>
+        {asteroids.map((data, i) => (
+          <Asteroid key={i} data={data} />
+        ))}
+     </group>
+   )
+}
+
+const Asteroid: React.FC<{ data: any }> = ({ data }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  useCursor(hovered);
+
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+       // Spin slightly faster on hover
+       if (hovered) {
+         meshRef.current.rotation.x += 1.0 * delta;
+         meshRef.current.rotation.y += 1.0 * delta;
+       }
+       // Scale up on hover
+       const targetScale = hovered ? data.scale * 1.5 : data.scale;
+       const currentScale = meshRef.current.scale.x; 
+       // lerp manually
+       const diff = targetScale - currentScale;
+       meshRef.current.scale.setScalar(currentScale + diff * delta * 5);
+    }
+  });
+
+  return (
+    <Float 
+      speed={0.2 + Math.random() * 0.5} 
+      rotationIntensity={0.5} 
+      floatIntensity={0.5} 
+      position={data.position as [number, number, number]}
+    >
+       <mesh 
+         ref={meshRef}
+         rotation={data.rotation as [number, number, number]}
+         onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
+         onPointerOut={(e) => setHovered(false)}
+       >
+          <dodecahedronGeometry args={[1, 0]} />
+          <meshStandardMaterial color={hovered ? "#888" : "#666"} roughness={0.9} flatShading />
+       </mesh>
+    </Float>
+  );
+}
+
+const PlanetSaturn = () => {
+    const planetRef = useRef<THREE.Group>(null);
+    const innerRingRef = useRef<THREE.MeshStandardMaterial>(null);
+    const outerRingRef = useRef<THREE.MeshStandardMaterial>(null);
+    const [hovered, setHovered] = useState(false);
+    
+    // Grab the camera position setter from the store
+    const setCameraPosition = useAppStore((state) => state.setCameraPosition);
+    
+    useCursor(hovered);
+    
+    useFrame((state, delta) => {
+        if(planetRef.current) {
+            // Rotate the whole group slightly on Y
+            planetRef.current.rotation.y += (hovered ? 0.5 : 0.1) * delta;
+            
+            // Tilt the planet slightly towards the camera on hover
+            const targetRotationZ = hovered ? 0.3 : 0.2;
+            // Simple lerp for rotation z
+            planetRef.current.rotation.z += (targetRotationZ - planetRef.current.rotation.z) * delta * 2;
+        }
+
+        // Pulse the emissive intensity for a magical glow
+        const time = state.clock.getElapsedTime();
+        const pulse = (Math.sin(time * 2) + 1) * 0.5; // Normalized 0 to 1 wave
+        
+        if (outerRingRef.current) {
+           // Base intensity 0.1, adds up to 0.2
+           outerRingRef.current.emissiveIntensity = 0.1 + pulse * 0.2;
+        }
+        
+        if (innerRingRef.current) {
+            // Inner ring glows slightly brighter
+            innerRingRef.current.emissiveIntensity = 0.2 + pulse * 0.3;
+        }
+    });
+
+    return (
+        <Float speed={1} rotationIntensity={0.1} floatIntensity={0.2}>
+            <group 
+              ref={planetRef} 
+              position={[-3.5, 0, -2]} 
+              rotation={[0.4, 0, 0.2]} 
+              scale={0.9}
+              onPointerOver={() => {
+                setHovered(true);
+                // Smoothly zoom in: Move camera closer (Default is [4, 2, 4])
+                setCameraPosition([3.2, 1.6, 3.2]);
+              }}
+              onPointerOut={() => {
+                setHovered(false);
+                // Return to default Store position
+                setCameraPosition([4, 2, 4]);
+              }}
+            >
+                <mesh>
+                    <sphereGeometry args={[2, 64, 64]} />
+                    <meshStandardMaterial color="#e0cda8" roughness={0.4} />
+                </mesh>
+                <mesh rotation={[Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[2.4, 4, 64]} />
+                    <meshStandardMaterial 
+                        ref={outerRingRef}
+                        color="#c7b48f"
+                        emissive="#c7b48f"
+                        side={THREE.DoubleSide} 
+                        transparent 
+                        opacity={0.6} 
+                    />
+                </mesh>
+                <mesh rotation={[Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[2.1, 2.3, 64]} />
+                    <meshStandardMaterial 
+                        ref={innerRingRef}
+                        color="#8a7e66"
+                        emissive="#8a7e66"
+                        side={THREE.DoubleSide} 
+                        transparent 
+                        opacity={0.8} 
+                    />
+                </mesh>
+            </group>
+        </Float>
+    )
+}
+
+const Moon = () => {
+    const meshRef = useRef<THREE.Mesh>(null);
+    const [hovered, setHovered] = useState(false);
+    useCursor(hovered);
+
+    useFrame((state, delta) => {
+      if (meshRef.current) {
+        const targetScale = hovered ? 1.1 : 1;
+        const current = meshRef.current.scale.x;
+        const next = current + (targetScale - current) * delta * 5;
+        meshRef.current.scale.set(next, next, next);
+      }
+    });
+
+    return (
+         <Float speed={0.5} rotationIntensity={0.1} floatIntensity={0.1}>
+             <mesh 
+               ref={meshRef}
+               position={[2, 2, -2]}
+               onPointerOver={() => setHovered(true)}
+               onPointerOut={() => setHovered(false)}
+             > 
+                 <sphereGeometry args={[1.2, 64, 64]} />
+                 <meshStandardMaterial color={hovered ? "#ffffff" : "#dddddd"} roughness={0.9} />
+             </mesh>
+         </Float>
+    )
+}
+
+const Satellite = () => {
+  const satelliteRef = useRef<THREE.Group>(null);
+  const lightRef = useRef<THREE.MeshStandardMaterial>(null);
+  const [hovered, setHovered] = useState(false);
+  useCursor(hovered);
+  
+  useFrame((state, delta) => {
+    if (satelliteRef.current) {
+      // Keep a slow auto-spin for life, but allow PresentationControls to dominate orientation
+      // Spin slightly faster when hovered
+      const speed = hovered ? 0.3 : 0.1;
+      satelliteRef.current.rotation.y += speed * delta;
+      satelliteRef.current.rotation.z = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.1;
+      
+      const targetScale = hovered ? 1.1 : 1;
+      const current = satelliteRef.current.scale.x;
+      const next = current + (targetScale - current) * delta * 5;
+      satelliteRef.current.scale.set(next, next, next);
+    }
+    
+    // Blinking light logic
+    if (lightRef.current) {
+        // Create a blinking effect using sine wave mapped to positive range
+        const time = state.clock.getElapsedTime();
+        // (Sin(time * speed) + 1) -> 0 to 2 range. 
+        lightRef.current.emissiveIntensity = (Math.sin(time * 6) + 1) * 2;
+    }
+  });
+
+  return (
+    <group position={[-2.5, 0, 0]}>
+        <PresentationControls
+            global={true}
+            cursor={true}
+            snap={true}
+            speed={2}
+            zoom={1}
+            polar={[-Math.PI / 2, Math.PI / 2]}
+            azimuth={[-Infinity, Infinity]}
+        >
+            <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
+                <group 
+                    ref={satelliteRef} 
+                    // Position moved to parent group to allow rotation around center
+                    rotation={[0.5, 0, 0]}
+                    onPointerOver={() => setHovered(true)}
+                    onPointerOut={() => setHovered(false)}
+                >
+                    {/* Core: Wireframe glow */}
+                    <mesh>
+                        <icosahedronGeometry args={[1, 1]} />
+                        <meshStandardMaterial 
+                            color="#4f46e5" 
+                            emissive="#4f46e5" 
+                            emissiveIntensity={0.4} 
+                            metalness={0.8} 
+                            roughness={0.2} 
+                            wireframe 
+                        />
+                    </mesh>
+                    {/* Core: Inner Solid (Changed from black to dark grey with gloss) */}
+                    <mesh>
+                        <icosahedronGeometry args={[0.8, 1]} />
+                        <meshStandardMaterial color="#1a1a1a" roughness={0.3} metalness={0.8} />
+                    </mesh>
+                    
+                    {/* Solar Panels */}
+                    <group position={[1.8, 0, 0]}>
+                        {/* Frame/Backing: Lighter grey to catch light and separate from background */}
+                        <mesh rotation={[0, 0, 0.2]}>
+                            <boxGeometry args={[2, 0.1, 0.8]} />
+                            <meshStandardMaterial color="#555" metalness={0.5} roughness={0.5} />
+                        </mesh>
+                        {/* Solar Cells Pattern */}
+                        <mesh rotation={[0, 0, 0.2]} position={[0, 0.06, 0]}>
+                            <planeGeometry args={[1.8, 0.6]} />
+                            <meshBasicMaterial color="#1e40af" />
+                        </mesh>
+                    </group>
+
+                    <group position={[-1.8, 0, 0]}>
+                        <mesh rotation={[0, 0, -0.2]}>
+                            <boxGeometry args={[2, 0.1, 0.8]} />
+                            <meshStandardMaterial color="#555" metalness={0.5} roughness={0.5} />
+                        </mesh>
+                        <mesh rotation={[0, 0, -0.2]} position={[0, 0.06, 0]}>
+                            <planeGeometry args={[1.8, 0.6]} />
+                            <meshBasicMaterial color="#1e40af" />
+                        </mesh>
+                    </group>
+                    
+                    {/* Blinking Light */}
+                    <mesh position={[0, 1.2, 0]}>
+                    <sphereGeometry args={[0.1, 8, 8]} />
+                    <meshStandardMaterial 
+                        ref={lightRef}
+                        color="#ff0000" 
+                        emissive="#ff0000"
+                        toneMapped={false}
+                    />
+                    </mesh>
+                </group>
+            </Float>
+        </PresentationControls>
+    </group>
+  )
+}
+
+// --- JOURNEY: Skill Cloud Component (Spherical Distribution) ---
+
+const SKILL_LIST = [
+  "JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Express.js",
+  "NestJS", "Python", "MongoDB", "PostgreSQL", "Supabase", "Firebase",
+  "Tailwind CSS", "Three.js", "WebGL", "AWS", "GCP", "Docker", "GraphQL",
+  "Prisma", "Zustand", "Redux", "Vite", "Vitest", "Playwright", "Postman", "Git", "Figma"
+];
+
+const SkillCloud = ({ isMobile }: { isMobile: boolean }) => {
+  const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
+  const cloudRef = useRef<THREE.Group>(null);
+  const [isInteracting, setInteracting] = useState(false);
+  useCursor(!!hoveredSkill);
+
+  // Distribute skills on a Fibonacci sphere for even spacing
+  const skills = useMemo(() => {
+    const items = [];
+    const phi = Math.PI * (3 - Math.sqrt(5)); // Golden angle
+    
+    for (let i = 0; i < SKILL_LIST.length; i++) {
+      const y = 1 - (i / (SKILL_LIST.length - 1)) * 2; // y goes from 1 to -1
+      const radius = Math.sqrt(1 - y * y);
+      const theta = phi * i;
+      
+      const x = Math.cos(theta) * radius;
+      const z = Math.sin(theta) * radius;
+      
+      // Radius of the sphere itself
+      const R = 2.5; 
+      items.push({
+        text: SKILL_LIST[i],
+        pos: new THREE.Vector3(x * R, y * R, z * R)
+      });
+    }
+    return items;
+  }, []);
+
+  // Auto-rotation logic
+  useFrame((state, delta) => {
+    // Only auto-rotate if user is NOT interacting
+    if (cloudRef.current && !isInteracting) {
+        cloudRef.current.rotation.y += delta * 0.1;
+    }
+  });
+
+  // DO NOT RENDER ON MOBILE (Avoid overlap and clutter)
+  if (isMobile) return null;
+
+  return (
+    // Moved to x=5 to ensure it is centered in the right column space without going off-screen
+    <group position={[5, 0, 0]}>
+      {/* Central glow */}
+      <Sparkles count={40} scale={5} size={4} speed={0.4} opacity={0.2} color="#6366f1" />
+      
+      {/* Interactive Rotatable Container */}
+      <PresentationControls
+        global={true} // Allow grabbing from background since UI might block direct hits
+        cursor={true}
+        snap={false}
+        speed={1.5}
+        zoom={1}
+        rotation={[0, 0, 0]}
+        polar={[-Math.PI / 4, Math.PI / 4]} // Limit vertical rotation slightly
+        azimuth={[-Infinity, Infinity]} // Infinite horizontal spinning
+      >
+        <group 
+          ref={cloudRef}
+          onPointerDown={() => setInteracting(true)}
+          onPointerUp={() => setInteracting(false)}
+          onPointerLeave={() => setInteracting(false)}
+        >
+          {skills.map((skill, i) => (
+             <FloatingText 
+                key={i}
+                text={skill.text}
+                position={skill.pos}
+                hovered={hoveredSkill === skill.text}
+                setHovered={setHoveredSkill}
+             />
+          ))}
+        </group>
+      </PresentationControls>
+    </group>
+  );
+};
+
+const FloatingText: React.FC<{ text: string, position: THREE.Vector3, hovered: boolean, setHovered: (t: string | null) => void }> = ({ text, position, hovered, setHovered }) => {
+  // We want the text to always face the camera (Billboard behavior)
+  const ref = useRef<THREE.Mesh>(null);
+  
+  useFrame((state) => {
+    if (ref.current) {
+        ref.current.lookAt(state.camera.position);
+    }
+  });
+
+  return (
+      <group position={position}>
+          <Text
+            ref={ref}
+            font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
+            fontSize={hovered ? 0.7 : 0.5} // Increased size for visibility
+            color={hovered ? "#ffffff" : "#a5b4fc"} 
+            anchorX="center"
+            anchorY="middle"
+            onPointerOver={() => setHovered(text)}
+            onPointerOut={() => setHovered(null)}
+            // Important: Disable tone mapping to ensure pure white on hover
+            material-toneMapped={false}
+          >
+            {text}
+          </Text>
+      </group>
+  );
+};
+
+export const Experience: React.FC = () => {
+  const { currentRoute } = useAppStore();
+  const isMobile = useIsMobile();
+  const isTablet = useIsMobile(1024); // Determine if we are on tablet or smaller
+
+  return (
+    <>
+      <color attach="background" args={['#020205']} />
+      <fog attach="fog" args={['#020205', 5, 25]} />
+      
+      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={0.5} />
+      <Sparkles count={150} size={3} scale={[12, 12, 12]} opacity={0.3} speed={0.2} color="#ffffff" />
+      
+      <ambientLight intensity={0.2} />
+      <directionalLight position={[10, 10, 5]} intensity={1.5} color="#ffdcae" />
+      <pointLight position={[-10, -5, -5]} intensity={0.8} color="#4c1d95" />
+
+      {/* HOME: Earth */}
+      {currentRoute === AppRoute.HOME && <PlanetEarth isMobile={isMobile} />}
+
+      {/* JOURNEY: Skill Cloud */}
+      {/* Use isTablet to hide cloud on both mobile and tablet, matching DOM layout behavior */}
+      {currentRoute === AppRoute.JOURNEY && <SkillCloud isMobile={isTablet} />}
+
+      {/* PORTFOLIO: Asteroid Field */}
+      {currentRoute === AppRoute.PORTFOLIO && <AsteroidField />}
+
+      {/* STORE: Ringed Gas Giant (Left) */}
+      {currentRoute === AppRoute.STORE && <PlanetSaturn />}
+      
+      {/* BOOKING: Moon (Top Right) */}
+      {currentRoute === AppRoute.BOOKING && <Moon />}
+
+      {/* CONTACT: Satellite */}
+      {currentRoute === AppRoute.CONTACT && <Satellite />}
+    </>
+  );
+};
