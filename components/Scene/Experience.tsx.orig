@@ -417,7 +417,7 @@ const SkillCloud = ({ isMobile }: { isMobile: boolean }) => {
       const z = Math.sin(theta) * radius;
 
       // Radius of the sphere itself
-      const R = 3.2;
+      const R = 2.5;
       items.push({
         text: SKILL_LIST[i],
         pos: new THREE.Vector3(x * R, y * R, z * R)

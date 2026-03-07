@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Code2, Server, Database, Globe, Cpu, Layers, Box, Terminal, FileJson, Zap, Cloud, Smartphone, Flame, FileCode, Hexagon, TestTube, Play, CloudLightning, Send } from 'lucide-react';
+import { Code2, Server, Database, Globe, Cpu, Layers, Box, Terminal, FileJson, Zap, Cloud, Smartphone, Flame, FileCode, Hexagon, TestTube, Play, CloudLightning, Send, LayoutTemplate, Network, CheckCircle, Coffee, FileCode2 } from 'lucide-react';
 
 const TECH_ITEMS = [
   { icon: Code2, label: 'React' },
@@ -25,13 +25,19 @@ const TECH_ITEMS = [
   { icon: Cloud, label: 'AWS' },
   { icon: CloudLightning, label: 'GCP' },
   { icon: Smartphone, label: 'React Native' },
-  { icon: Send, label: 'Postman' }
+  { icon: Send, label: 'Postman' },
+  { icon: LayoutTemplate, label: 'Shadcn UI' },
+  { icon: Network, label: 'REST APIs' },
+  { icon: CheckCircle, label: 'Jest' },
+  { icon: Coffee, label: 'Java' },
+  { icon: FileCode2, label: 'C++' },
+  { icon: Cloud, label: 'Netlify' }
 ];
 
 export const HeroTechStack: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto mb-8 md:mb-10 flex flex-col items-center gap-6 md:gap-8">
-      
+
       {/* Top Layer: Static Value Props */}
       {/* Updated: Reduced text size on mobile (text-xs) and gap for tighter layout */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-x-4 gap-y-1 text-xs md:text-base font-medium text-indigo-200/80 uppercase tracking-widest text-center px-4">
@@ -44,7 +50,7 @@ export const HeroTechStack: React.FC = () => {
 
       {/* Bottom Layer: Glass Marquee */}
       {/* Container with Mask for Fading Edges */}
-      <div 
+      <div
         className="relative w-full max-w-3xl overflow-hidden"
         style={{
           maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
@@ -53,11 +59,11 @@ export const HeroTechStack: React.FC = () => {
       >
         {/* Glass Effect Background (HUD Style) */}
         <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-white/10 rounded-full z-0" />
-        
+
         {/* Marquee Track - Reduced padding on mobile */}
         <div className="flex relative z-10 py-2 md:py-3">
-             <MarqueeGroup />
-             <MarqueeGroup />
+          <MarqueeGroup />
+          <MarqueeGroup />
         </div>
       </div>
     </div>
@@ -65,19 +71,19 @@ export const HeroTechStack: React.FC = () => {
 };
 
 const MarqueeGroup = () => (
-    <motion.div 
-        className="flex gap-8 md:gap-12 items-center flex-shrink-0 px-6" // Reduced gap on mobile
-        initial={{ x: 0 }}
-        animate={{ x: "-100%" }}
-        // Updated: Duration increased to 50 for slower, smoother scroll
-        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-    >
-        {TECH_ITEMS.map((item, index) => (
-            <div key={index} className="flex items-center gap-2 md:gap-3 text-gray-300 group cursor-default">
-                {/* Reduced icon size on mobile using Tailwind classes instead of size prop for responsiveness */}
-                <item.icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-                <span className="font-mono font-bold text-xs md:text-sm tracking-wide group-hover:text-white transition-colors">{item.label}</span>
-            </div>
-        ))}
-    </motion.div>
+  <motion.div
+    className="flex gap-8 md:gap-12 items-center flex-shrink-0 px-6" // Reduced gap on mobile
+    initial={{ x: 0 }}
+    animate={{ x: "-100%" }}
+    // Updated: Duration increased to 50 for slower, smoother scroll
+    transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+  >
+    {TECH_ITEMS.map((item, index) => (
+      <div key={index} className="flex items-center gap-2 md:gap-3 text-gray-300 group cursor-default">
+        {/* Reduced icon size on mobile using Tailwind classes instead of size prop for responsiveness */}
+        <item.icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+        <span className="font-mono font-bold text-xs md:text-sm tracking-wide group-hover:text-white transition-colors">{item.label}</span>
+      </div>
+    ))}
+  </motion.div>
 );

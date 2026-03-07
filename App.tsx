@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { PersistentLayout } from './components/Layout/PersistentLayout';
 import Home from './pages/Home';
 import Journey from './pages/Journey';
@@ -40,7 +40,7 @@ const AppEntryController: React.FC<{ children: React.ReactNode }> = ({ children 
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <AppEntryController>
         <Routes>
           <Route element={<PersistentLayout />}>
@@ -53,7 +53,7 @@ const App: React.FC = () => {
           </Route>
         </Routes>
       </AppEntryController>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

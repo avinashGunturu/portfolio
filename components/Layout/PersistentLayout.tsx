@@ -79,7 +79,7 @@ export const PersistentLayout: React.FC = () => {
       */}
       <div className="relative z-10 h-full w-full flex flex-col pointer-events-none">
         <Navigation />
-        
+
         {/* 
           Page Transition Wrapper 
           Using AnimatePresence to handle DOM exit animations.
@@ -88,25 +88,25 @@ export const PersistentLayout: React.FC = () => {
           backdrop-filter elements (Glassmorphism) in Chrome/Safari.
         */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
-            <AnimatePresence mode="wait">
-              <motion.main
-                key={location.pathname}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "circOut" }}
-                className="w-full min-h-full"
-              >
-                <Outlet />
-              </motion.main>
-            </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.main
+              key={location.pathname}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "circOut" }}
+              className="w-full min-h-full"
+            >
+              <Outlet />
+            </motion.main>
+          </AnimatePresence>
         </div>
       </div>
-      
+
       {/* Mobile/Perf Indicator */}
-      <div className="fixed bottom-4 right-4 z-50 pointer-events-none text-[10px] text-white/20 uppercase tracking-widest font-mono">
+      {/* <div className="fixed bottom-4 right-4 z-50 pointer-events-none text-[10px] text-white/20 uppercase tracking-widest font-mono">
         {isMobile ? 'Mobile Opt.' : 'High Perf'} :: WebGL Active
-      </div>
+      </div> */}
     </div>
   );
 };

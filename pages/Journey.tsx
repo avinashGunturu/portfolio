@@ -6,24 +6,35 @@ import { Download, Calendar, Code } from 'lucide-react';
 
 const TIMELINE_DATA = [
   {
-    role: "Software Development Engineer-1",
-    company: "Upsure",
+    role: "Software Development Engineer - 2",
+    company: "Upsure AI",
+    companyUrl: "https://www.upsure.io/",
     date: "JUNE 2023 — PRESENT",
-    description: "Built scalable full-stack InsurTech applications using React, TypeScript, and Node.js. Delivered enterprise solutions for major financial clients, managing international on-site deployments. Modernized legacy systems and implemented a robust design system to drive long-term scalability."
+    bullets: [
+      "Architected scalable full-stack InsurTech platforms (React, Node.js, PostgreSQL) for enterprise clients, including an RBAC system handling 50,000+ agents.",
+      "Drove global delivery via a 2-month on-site deployment in Dubai, shipping features and integrating LLM & PDF APIs to automate internal workflows.",
+      "Spearheaded legacy React upgrades resulting in ~40% bundle performance enhancements, and built custom UI libraries reducing new feature turnaround by 30%."
+    ]
   },
   {
     role: "Front End Developer",
     company: "Itzeazy",
+    companyUrl: "https://itzeazy.in/",
     date: "APRIL 2022 — JUNE 2023",
-    description: "Developed high-performance, pixel-perfect user interfaces with React.js. Optimized frontend performance, reducing load times by 50% and increasing user engagement by 30%. Enforced accessibility and cross-browser standards within an Agile workflow."
+    bullets: [
+      "Owned end-to-end frontend architecture of a pan-India driving school aggregator, designing intricate user flows in Figma and developing the engine in React.js.",
+      "Integrated dynamic REST APIs, comprehensive admin dashboards, and robust payment gateways handling massive real-time booking operations.",
+      "Boosted platform load performance by 50% through surgical component rendering optimizations, lazy-loading pipelines, and enforced cross-browser fidelity."
+    ]
   }
 ];
 
 const SKILL_LIST = [
   "JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Express.js",
-  "NestJS", "Python", "MongoDB", "PostgreSQL", "Supabase", "Firebase",
-  "Tailwind CSS", "Three.js", "WebGL", "AWS", "GCP", "Docker", "GraphQL",
-  "Prisma", "Zustand", "Redux", "Vite", "Vitest", "Playwright", "Postman", "Git", "Figma"
+  "NestJS", "Python", "Java", "C++", "MongoDB", "PostgreSQL", "Supabase", "Firebase",
+  "HTML5", "CSS3", "Tailwind CSS", "Shadcn UI", "Three.js", "WebGL", "AWS", "GCP", "Netlify", "Docker", "REST APIs", "GraphQL",
+  "JWT", "RBAC", "Razorpay",
+  "Prisma", "Zustand", "Redux", "TanStack Query", "Vite", "Vitest", "Jest", "Playwright", "Storybook", "Postman", "Git", "Figma"
 ];
 
 const Journey: React.FC = () => {
@@ -40,9 +51,9 @@ const Journey: React.FC = () => {
         similar to mobile.
       */}
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12">
-        
+
         {/* LEFT COLUMN: Timeline Card */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -50,7 +61,7 @@ const Journey: React.FC = () => {
         >
           {/* Card Container matching screenshot */}
           <div className="bg-brand-surface/90 backdrop-blur-xl border border-white/5 rounded-3xl p-8 md:p-10 shadow-2xl">
-            
+
             {/* Header Section */}
             <div className="flex flex-wrap items-start justify-between gap-4 mb-10">
               <div>
@@ -74,21 +85,34 @@ const Journey: React.FC = () => {
                   <div key={index} className="relative pl-10 group">
                     {/* Timeline Dot */}
                     <span className="absolute left-0 top-1.5 h-5 w-5 rounded-full border-[3px] border-brand-primary bg-black z-10 group-hover:scale-110 group-hover:bg-brand-primary transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.3)]" />
-                    
+
                     {/* Content Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-1 sm:gap-4 items-baseline mb-2">
                       <h3 className="text-xl font-bold text-white">{item.role}</h3>
-                      <span className="text-brand-primary font-medium text-right sm:text-left">{item.company}</span>
+                      {item.companyUrl ? (
+                        <a
+                          href={item.companyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-primary font-medium text-right sm:text-left hover:underline hover:text-white transition-colors"
+                        >
+                          {item.company}
+                        </a>
+                      ) : (
+                        <span className="text-brand-primary font-medium text-right sm:text-left">{item.company}</span>
+                      )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-xs text-gray-500 font-mono uppercase tracking-widest mb-3">
                       <Calendar size={12} />
                       {item.date}
                     </div>
-                    
-                    <p className="text-gray-400 text-sm leading-relaxed max-w-md">
-                      {item.description}
-                    </p>
+
+                    <ul className="text-gray-400 text-[13px] sm:text-sm leading-relaxed max-w-md list-disc ml-4 space-y-1.5 opacity-90">
+                      {item.bullets.map((bullet, bIndex) => (
+                        <li key={bIndex} className="pl-1 marker:text-brand-primary">{bullet}</li>
+                      ))}
+                    </ul>
                   </div>
                 ))}
               </div>
@@ -100,17 +124,17 @@ const Journey: React.FC = () => {
               Replaces the 3D sphere which is hidden on mobile/tablet.
             */}
             <div className="mt-12 pt-8 border-t border-white/10 lg:hidden">
-                <div className="flex items-center gap-2 mb-4 text-brand-primary">
-                    <Code size={20} />
-                    <h3 className="text-xl font-bold text-white">Technical Skills</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {SKILL_LIST.map((skill, i) => (
-                        <span key={i} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs font-mono text-gray-300">
-                            {skill}
-                        </span>
-                    ))}
-                </div>
+              <div className="flex items-center gap-2 mb-4 text-brand-primary">
+                <Code size={20} />
+                <h3 className="text-xl font-bold text-white">Technical Skills</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {SKILL_LIST.map((skill, i) => (
+                  <span key={i} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs font-mono text-gray-300">
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </div>
 
           </div>
